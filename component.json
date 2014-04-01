@@ -1,0 +1,19 @@
+{
+  "name": "quanta",
+  "repo": "obsoleter/quanta",
+  "description": "Hierarchical life tracking",
+  "version": "0.0.1",
+  "keywords": [],
+  "dependencies": {
+    "yyx990803/vue": "*"
+  },
+  "development": {},
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": [
+    "index.js"
+  ],
+  "styles": [
+    "quanta.css"
+  ]
+}

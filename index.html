@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Quanta</title>
+  <meta name="description" content="Hierarchical time tracking">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+  <link rel="stylesheet" href="https://rawgithub.com/driftyco/ionic/master/release/css/ionic.min.css">
+  <link rel="stylesheet" href="http://code.ionicframework.com/ionicons/1.4.1/css/ionicons.min.css">
+  <link rel="stylesheet" href="build/build.css">
+</head>
+<body>
+  <div id="main">
+
+    <div class="bar bar-header bar-stable">
+      <img v-if="user" v-attr="src: 'http://www.gravatar.com/avatar/' + user.md5_hash">
+      <h1 class="title">Quanta</h1>
+      <button class="button" v-if="user" v-on="click: logOut">Log out</button>
+    </div>
+
+    <div class="scroll-content has-header padding overflow-scroll">
+      <div v-if="user">
+        <div class="list card">
+          <div class="item item-button-right path-header">
+            <div v-component="folderPath" v-with="$data"></div>
+            <button class="button button-positive"
+              v-on="click: addTimer">
+              <i class="icon ion-plus"></i>
+            </button>
+          </div>
+          <div class="item" v-if="items.length === 0">
+            Click the plus button to add a timer.</div>
+        </div>
+        <div v-repeat="items" v-component="timer"></div>
+      </div>
+
+      <div v-if="!user">
+        <div class="padding">
+          <button v-on="click: logIn('facebook')"
+            class="button button-block button-positive">Log in with Facebook</button>
+          <span class="login-or">or</span>
+          <button v-on="click: logIn('github')"
+            class="button button-block button-dark">Log in with Github</button>
+        </div>
+      </div>
+      <!--
+      <div class="card">
+          <div class="item item-text-wrap">
+              <pre>{{ current }}</pre>
+          </div>    
+      </div>
+      <div class="card">
+          <div class="item item-text-wrap">
+            {{ emailAddress }}
+              <pre>{{ json }}</pre>
+          </div>    
+      </div>
+      -->
+    </div>
+  </div>
+
+  <script type="text/template" id="timer-template">
+    <div class="card list" v-class="active: running">
+      <a class="item item-icon-left" v-on="click: drillDown" href="#" v-class="child-running: hasChildRunning">
+        <i class="icon ion-clock dark" v-class="inactive: !running"></i>
+        <span class="timer-name" v-class="running ? 'dark' : 'inactive'">
+          <span v-component="editable" 
+            v-with="editable: editing, inputValue: name"></span>
+        </span>
+        <span v-on="click: edit"
+          v-class="running ? 'dark' : 'inactive'">
+          <i v-class="ion-edit: !editing"></i>
+        </span>
+        <span class="item-note"
+          v-class="dark: running">
+          {{ newSeconds | niceTime }}
+        </span>
+      </a>
+      <div class="item">
+        <div class="button-bar">
+          <button class="button icon-center ion-pause"
+            v-class="running ? 'ion-pause' : 'ion-play',
+            running ? 'button-balanced' : 'button-light'"
+            v-on="click: toggle"></button>
+          <button class="refresh-button button icon-center ion-refresh button-light"
+            v-on="click: reset"
+            v-attr="disabled: !running"></button>
+          <button class="button icon-center ion-plus button-light"
+            v-on="click: addTime(1)" v-attr="disabled: !running">1m</button>
+          <button class="button button-light"
+            v-on="click: kill($index)">
+            <i class="ion-close assertive"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/template" id="folder-path-template">
+    <ul class="folder-path-items">
+      <li class="item-button-left">
+      <button class="button button-stable"
+        v-on="click: changePath(-1)">
+        <i class="ion-home"></i>
+      </button>
+      </li>
+      <li class="folder-path-item" v-repeat="path">
+      <a href="#" v-on="click: changePath($index)">{{ name  }}</a>
+      </li>
+    </ul>
+  </script>
+
+  <script type="text/template" id="editable-input">
+    <span class="atom-name" v-class="editable: editable" v-editable-element="editable" v-model="inputValue" v-on="click: stopProp" v-style="cursor: editable ? 'default!important' : 'inherit'"></span>
+  </script>
+
+  <!-- other libraries -->
+  <script src="https://cdn.firebase.com/js/client/1.0.6/firebase.js"></script>
+  <script src="https://cdn.firebase.com/js/simple-login/1.3.0/firebase-simple-login.js"></script>
+
+  <!-- main -->
+  <script src="build/build.js"></script>
+
+  <script>
+  var app = require('quanta');
+  app();
+  </script>
+</body>
+</html>
