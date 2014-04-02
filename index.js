@@ -1,8 +1,8 @@
 module.exports = function () {
 
 // Vue.config('debug', false);
-var baseURL  = 'https://horologe.firebaseIO.com/',
-    horologe = new Firebase(baseURL),
+var baseURL  = 'https://qua.firebaseIO.com/',
+    quanta = new Firebase(baseURL),
     UserData = null,
     Vue = require('vue');
 
@@ -53,7 +53,7 @@ function cascadeAction(opts) {
         cascadeAction(opts);
     });
 }
-        
+
 function walkPath(opts) {
     var items      = {},
         path       = opts.path,
@@ -389,7 +389,7 @@ var vue = new Vue({
                 }
             };
             var that = this,
-                auth = new FirebaseSimpleLogin(horologe, function(error, user) {
+                auth = new FirebaseSimpleLogin(quanta, function(error, user) {
                     if (error || !user) {
                         console.log(error);
                         that.errors = [
@@ -401,7 +401,7 @@ var vue = new Vue({
                     console.log(user);
                     that.emailAddress = getEmail[app](user);
 
-                    UserData = horologe.child('users/' + user.uid);
+                    UserData = quanta.child('users/' + user.uid);
                     UserData.once('value', function(snapshot) {
                         if(snapshot.val() !== null) {
                             that.timers = snapshot.val().timers || [];

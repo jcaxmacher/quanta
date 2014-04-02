@@ -1,5 +1,6 @@
 
-build: components index.js horologue.css template.js
+build: components index.js quanta.css template.js
+	@echo building
 	@component build --dev
 
 template.js: template.html
@@ -10,5 +11,12 @@ components: component.json
 
 clean:
 	rm -fr build components template.js
+
+deploy: build
+	rm -rf app
+	mkdir -p app/build
+	cp ./build/* ./app/build/
+	cp index.html ./app/
+	firebase deploy
 
 .PHONY: clean

@@ -5,7 +5,8 @@
   "version": "0.0.1",
   "keywords": [],
   "dependencies": {
-    "yyx990803/vue": "*"
+    "yyx990803/vue": "*",
+    "yields/lru-cache": "*"
   },
   "development": {},
   "license": "MIT",
