@@ -94,6 +94,38 @@ function niceTime (value) {
     return displayText;
 };
 
+function lastOfType(logs, type) {
+    var i = logs.length;
+    if (!i) return null;
+    while (i--) {
+        if (logs[i].type == type) return logs[i];
+    }
+    return null;
+}
+
+function arrayEquals(a, b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+        if (a[i] != b[i]) return false;
+    }
+    return true;
+}
+
+function beginsWith(child, parent) {
+    if (child.length < parent.length) return false;
+    for (var i = 0; i < parent.length; i++) {
+        if (child[i] != parent[i]) return false;
+    }
+    return true;
+}
+
+function any(list, fn) {
+    for (var i = 0; i < list.length; i++) {
+        if (fn(list[i])) return true;
+    }
+    return false;
+}
+
 var PathComponent = Vue.extend({
     replace: false,
     template: '#folder-path-template'
@@ -159,50 +191,78 @@ var TimerComponent = Vue.extend({
     template: '#timer-template',
     data: {
         id: null,
-        running: false,
-        hasChildRunning: false,
-        history: empty,
-        children: empty,
-        additions: empty
+        parent: empty,
+        logs: empty,
+        type: 'timer'
     },
     computed: {
+        running: function() {
+            var last = lastOfType(this.logs, 'interval');
+            if (!last || last.stoptime != null) return false;
+            return true;
+        },
+        children: function() {
+            var searchPath = this.parent
+                                 .slice(0, this.parent.length)
+                                 .concat([this.id]);
+            return this.$root.qs.filter(function (q) {
+                return beginsWith(q.parent, searchPath);
+            });
+        },
+        childRunning: function() {
+            return any(this.children, function (q) {
+                var last = lastOfType(q.logs, 'interval');
+                if (!last || last.stoptime != null) return false;
+                return true;
+            }.bind(this));
+        },
         newSeconds: function() {
             this.$root.recompute;
-            var historySeconds = this.history.reduce(function (current, next) {
-                return current + (((next.stopTime || Date.now()) - next.startTime) / 1000);
-            }, 0);
-            var additionSeconds = this.additions.reduce(function (current, next) {
-                return current + next.amount;
-            }, 0);
-            return historySeconds + additionSeconds;
+            return this.timeRecorded(this);
         }
     },
     ready: function () {
-        this.history = resetArray(this.history);
-        this.children = resetArray(this.children);
-        this.additions = resetArray(this.additions);
+        this.logs = resetArray(this.logs);
+        this.parent = resetArray(this.parent);
         if (this.id === null) {
             this.id = UUID.generate();
             this.init();
         }
     },
     methods: {
+        timeRecorded: function(q) {
+            var reduction = function (current, next) {
+                    var amount = next.type == 'interval'
+                        ? (((next.stopTime || Date.now()) - next.startTime) / 1000)
+                        : next.type == 'addition'
+                            ? next.amount
+                            : 0;
+                    return current + amount;
+                },
+                seconds = q.logs.reduce(reduction, 0),
+                childSeconds = this.children.reduce(function (current, next) {
+                    return current + next.logs.reduce(reduction, 0);
+                }, 0);
+            return seconds + childSeconds;
+        },
         init: function () {
+            console.log('dispatch running');
             this.$dispatch('running', this);
         },
         halt: function () {
+            console.log('dispatch stopping');
             this.$dispatch('stopping', this);
         },
         toggle: function () {
             if (!this.running) this.init();
             else this.halt();
         },
-        reset: function () {
-            this.history.pop();
-            this.additions = [];
+        undo: function () {
+            this.logs.pop();
         },
         addTime: function(t) {
-            this.additions.push({
+            this.logs.push({
+                type: 'addition',
                 timestamp: Date.now(),
                 amount: t * 60
             });
@@ -226,10 +286,9 @@ var vue = new Vue({
         },{
             name: 'Counter'
         }],
-        timers: [],
         counters: [],
         path: [],
-        current: [],
+        qs: [],
         emailAddress: '',
         password: '',
         recompute: true
@@ -237,14 +296,9 @@ var vue = new Vue({
     created: function () {
 
         // Set sync to firebase
-        this.$watch('timers', function(timers) {
+        this.$watch('qs', function(qs) {
             if (this.user) {
-                UserData.child('timers').set(timers);
-            }
-        });
-        this.$watch('current', function(current) {
-            if (this.user) {
-                UserData.child('current').set(current);
+                UserData.child('qs').set(qs);
             }
         });
         this.$watch('path', function(path) {
@@ -266,75 +320,40 @@ var vue = new Vue({
         });
 
         this.$on('running', function(timer) {
-            var path = this.path.slice(0, this.path.length),
-                that = this;
-            path.push({
-                id: timer.id,
-                name: timer.name
+            console.log(timer);
+            this.stopAllRunning();
+            timer.logs.push({
+                type: 'interval',
+                startTime: Date.now(),
+                stopTime: null
             });
-
-            if (this.current.join(sep) !== path.join(sep) || !timer.running) {
-                // Halt all in existing currently running path
-                walkPath({
-                    path: this.current,
-                    items: this.timers,
-                    itemAttr: 'id',
-                    childAttr: 'children',
-                    pathAction: this.halt
-                });
-                // Start all in new running path
-                walkPath({
-                    path: path,
-                    items: this.timers,
-                    itemAttr: 'id',
-                    childAttr: 'children',
-                    pathAction: function(timer) {
-                        that.init(timer);
-                        timer.hasChildRunning = true;
-                    }
-                });
-                this.current = path;
-                timer.hasChildRunning = false;
-            }
         });
 
         this.$on('stopping', function(timer) {
-            var path = this.path.slice(0, this.path.length),
-                that = this;
-            path.push(timer.id);
-            this.current = [];
-            // Halt up the tree from this timer
-            walkPath({
-                path: path,
-                items: this.timers,
-                itemAttr: 'id',
-                childAttr: 'children',
-                pathAction: this.halt
-            });
-            // Halt all children down the tree
-            cascadeAction({
-                items: timer,
-                childAttr: 'children',
-                action: this.halt
-            });
-        }); 
-       
+            console.log('stopping received');
+            console.log(timer);
+            var last = lastOfType(timer.logs, 'interval');
+            if (last) last.stopTime = Date.now();
+        });
     },
     computed: {
         json: function () {
-            return JSON.stringify(this.timers, undefined, 2);
+            return JSON.stringify(this.qs, undefined, 2);
         },
         items: function() {
-            return walkPath({
-                path: this.path,
-                items: this.timers,
-                itemAttr: 'id',
-                childAttr: 'children',
-                resultAttr: 'children'
-            });
+            return this.qs.filter(function (q) {
+                return arrayEquals(q.parent, this.path);
+            }.bind(this));
         },
-        currentTimer: function () {
-            return JSON.stringify(this.current.$data, undefined, 2);
+        current: function () {
+            var last = null, i = 0, q = null;
+            for (; i < this.qs; i++) {
+                q = this.qs[i];
+                last = lastOfType(q.logs, 'interval');
+                if (last && last.stopTime == null) 
+                    return q.parent.slice(0, q.parent.length).concat([q.id]);
+            }
+            return [];
         }
     },
     components: {
@@ -346,10 +365,22 @@ var vue = new Vue({
         niceTime: niceTime
     },
     methods: {
+        stopAllRunning: function () {
+            console.log('try stopping');
+            this.qs.forEach(function (q) {
+                var last = lastOfType(q.logs, 'interval');
+                if (last && last.stopTime == null) {
+                    console.log('stopping - ' + q.name);
+                    last.stopTime = Date.now();
+                }
+            });
+        },
         addTimer: function () {
-            this.items.push({
+            this.qs.push({
                 name: '',
-                editing: true
+                editing: true,
+                parent: this.path.slice(0, this.path.length),
+                type: 'timer'
             });
         },
         kill: function (i) {
@@ -404,12 +435,10 @@ var vue = new Vue({
                     UserData = quanta.child('users/' + user.uid);
                     UserData.once('value', function(snapshot) {
                         if(snapshot.val() !== null) {
-                            that.timers = snapshot.val().timers || [];
-                            that.current = snapshot.val().current || [];
+                            that.qs = snapshot.val().qs || [];
                             that.path = snapshot.val().path || [];
                         } else {
-                            that.timers = [];
-                            that.current = [];
+                            that.qs = [];
                             that.path = [];
                         }
                         that.user = user;
