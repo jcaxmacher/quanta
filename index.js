@@ -112,7 +112,7 @@ function arrayEquals(a, b) {
 }
 
 function beginsWith(child, parent) {
-    if (child.length < parent.length) return false;
+    if (child.length <= parent.length) return false;
     for (var i = 0; i < parent.length; i++) {
         if (child[i] != parent[i]) return false;
     }
@@ -197,9 +197,7 @@ var TimerComponent = Vue.extend({
     },
     computed: {
         running: function() {
-            var last = lastOfType(this.logs, 'interval');
-            if (!last || last.stoptime != null) return false;
-            return true;
+            return arrayEquals(this.parent.concat([this.id]), this.$root.running);
         },
         children: function() {
             var searchPath = this.parent
@@ -210,11 +208,7 @@ var TimerComponent = Vue.extend({
             });
         },
         childRunning: function() {
-            return any(this.children, function (q) {
-                var last = lastOfType(q.logs, 'interval');
-                if (!last || last.stoptime != null) return false;
-                return true;
-            }.bind(this));
+            return beginsWith(this.$root.running, this.parent.concat([this.id]));
         },
         newSeconds: function() {
             this.$root.recompute;
@@ -288,6 +282,7 @@ var vue = new Vue({
         }],
         counters: [],
         path: [],
+        running: [],
         qs: [],
         emailAddress: '',
         password: '',
@@ -298,6 +293,7 @@ var vue = new Vue({
         // Set sync to firebase
         this.$watch('qs', function(qs) {
             if (this.user) {
+                console.log(qs);
                 UserData.child('qs').set(qs);
             }
         });
@@ -321,12 +317,27 @@ var vue = new Vue({
 
         this.$on('running', function(timer) {
             console.log(timer);
-            this.stopAllRunning();
+            var runningID = this.running[this.running.length - 1],
+                runningTimer = this.qs.filter(function (q) {
+                    return q.id == runningID;
+                }),
+                lastLog = null;
+            if (runningTimer.length > 0) {
+                runningTimer = runningTimer[0];
+                last = lastOfType(runningTimer.logs, 'interval');
+                if (last && last.stopTime == null) {
+                    console.log('stopping - ' + runningTimer.name);
+                    last.stopTime = Date.now();
+                }
+            }
             timer.logs.push({
                 type: 'interval',
                 startTime: Date.now(),
                 stopTime: null
             });
+            this.running = timer.parent
+                                .slice(0, timer.parent.length - 1)
+                                .concat([timer.id])
         });
 
         this.$on('stopping', function(timer) {
@@ -334,6 +345,7 @@ var vue = new Vue({
             console.log(timer);
             var last = lastOfType(timer.logs, 'interval');
             if (last) last.stopTime = Date.now();
+            this.running = [];
         });
     },
     computed: {
@@ -365,16 +377,6 @@ var vue = new Vue({
         niceTime: niceTime
     },
     methods: {
-        stopAllRunning: function () {
-            console.log('try stopping');
-            this.qs.forEach(function (q) {
-                var last = lastOfType(q.logs, 'interval');
-                if (last && last.stopTime == null) {
-                    console.log('stopping - ' + q.name);
-                    last.stopTime = Date.now();
-                }
-            });
-        },
         addTimer: function () {
             this.qs.push({
                 name: '',
@@ -384,27 +386,11 @@ var vue = new Vue({
             });
         },
         kill: function (i) {
-            this.items.$remove(i);
+            this.qs.$remove(i);
         },
         changePath: function (index) {
             this.$dispatch('changePath:up',
                            this.path.slice(0, index + 1));
-        },
-        halt: function (timer) {
-            if (timer.running) {
-                timer.running = false;
-                timer.history[timer.history.length - 1].stopTime = Date.now();
-                timer.hasChildRunning = false;
-            }
-        },
-        init: function (timer) {
-            if (!timer.running) {
-                timer.running = true;
-                timer.history.push({
-                  startTime: Date.now(),
-                  stopTime: null
-                });
-            }
         },
         logOut: function() {
           console.log('attempting logout');
