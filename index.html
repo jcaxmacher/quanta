@@ -58,7 +58,8 @@
       -->
       <div class="card">
           <div class="item item-text-wrap">
-            {{ emailAddress }}
+              <pre>{{ running }}</pre>
+              <pre>{{ path }}</pre>
               <pre>{{ json }}</pre>
           </div>    
       </div>
@@ -67,7 +68,8 @@
 
   <script type="text/template" id="timer-template">
     <div class="card list" v-class="active: running">
-      <a class="item item-icon-left" v-on="click: drillDown" href="#" v-class="child-running: hasChildRunning">
+      <a class="item item-icon-left" v-on="click: drillDown" href="#">
+        <!-- v-class="child-running: hasChildRunning" -->
         <i class="icon ion-clock dark" v-class="inactive: !running"></i>
         <span class="timer-name" v-class="running ? 'dark' : 'inactive'">
           <span v-component="editable" 
@@ -79,7 +81,7 @@
         </span>
         <span class="item-note"
           v-class="dark: running">
-          {{ running }} - {{ newSeconds | niceTime }}
+          {{ newSeconds | niceTime }}
         </span>
       </a>
       <div class="item">
@@ -89,8 +91,8 @@
             running ? 'button-balanced' : 'button-light'"
             v-on="click: toggle"></button>
           <button class="refresh-button button icon-center ion-refresh button-light"
-            v-on="click: reset"
             v-attr="disabled: !running"></button>
+            <!-- v-on="click: reset" -->
           <button class="button icon-center ion-plus button-light"
             v-on="click: addTime(1)" v-attr="disabled: !running">1m</button>
           <button class="button button-light"
