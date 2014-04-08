@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = function () {
 
 var baseURL  = 'https://qua.firebaseIO.com/',
@@ -35,7 +37,7 @@ var EditableComponent = Vue.extend({
                 };
                 this._blurHandler = function() {
                     that.vm.editable = false;
-                    if (!that.vm.inputValue) that.vm.inputValue = 'replace me!'
+                    if (!that.vm.inputValue) that.vm.inputValue = 'replace me!';
                 };
                 this.el.addEventListener('keydown', this._handler);
                 this.el.addEventListener('blur', this._blurHandler);
@@ -44,7 +46,7 @@ var EditableComponent = Vue.extend({
             update: function(value) {
                 if (value !== undefined) this.el.contentEditable = value;
                 if (value) this.el.focus();
-                if (value && this.vm.inputValue == 'replace me!') this.vm.inputValue = '';
+                if (value && this.vm.inputValue === 'replace me!') this.vm.inputValue = '';
             },
             unbind: function() {
                 this.el.removeEventListener('keydown', this._handler);
@@ -82,6 +84,7 @@ var TimerComponent = Vue.extend({
             return utils.arrayEquals(this.parent.concat([this.id]), this.$root.running);
         },
         children: function() {
+            /* jshint expr: true */
             this.parent;
             this.$root.qs;
             console.log('recomputing children for ' + this.name);
@@ -96,18 +99,19 @@ var TimerComponent = Vue.extend({
             return utils.beginsWith(this.$root.running, this.parent.concat([this.id]), true);
         },
         newSeconds: function() {
+            /* jshint expr: true */
             this.$root.recompute;
             this.logs;
             this.children;
             var reduction = function (current, next) {
-                    var amount = next.type == 'interval'
+                    var amount = next.type === 'interval'
                         ? (((next.stopTime || Date.now()) - next.startTime) / 1000)
-                        : next.type == 'addition'
+                        : next.type === 'addition'
                             ? next.amount
                             : 0;
                     return current + amount;
                 },
-                seconds = this.logs.reduce(reduction, 0);
+                seconds = this.logs.reduce(reduction, 0),
                 childSeconds = this.children.reduce(function (current, next) {
                     return current + next.logs.reduce(reduction, 0);
                 }, 0);
@@ -123,7 +127,7 @@ var TimerComponent = Vue.extend({
         }
     },
     methods: {
-        timeRecorded: function(q) {
+        timeRecorded: function() {
         },
         init: function () {
             this.$dispatch('running', this);
@@ -206,14 +210,14 @@ var vue = new Vue({
         this.$on('running', function(timer) {
             var runningID = this.running[this.running.length - 1],
                 runningTimer = this.qs.filter(function (q) {
-                    return q.id == runningID;
+                    return q.id === runningID;
                 }),
                 lastLog = null;
             if (runningTimer.length > 0) {
                 runningTimer = runningTimer[0];
-                last = utils.lastOfType(runningTimer.logs, 'interval');
-                if (last && last.stopTime == null) {
-                    last.stopTime = Date.now();
+                lastLog = utils.lastOfType(runningTimer.logs, 'interval');
+                if (lastLog && lastLog.stopTime == null) {
+                    lastLog.stopTime = Date.now();
                 }
             }
             timer.logs.push({
@@ -235,6 +239,7 @@ var vue = new Vue({
             return JSON.stringify(this.qs, undefined, 2);
         },
         items: function() {
+            /* jshint expr: true */
             this.qs;
             this.path;
             return this.qs.filter(function (q) {
@@ -275,9 +280,9 @@ var vue = new Vue({
             });
         },
         kill: function (q) {
-            if (arrayEquals(this.running, q.parent.slice().concat(q.id))) this.running = [];
+            if (utils.arrayEquals(this.running, q.parent.slice().concat(q.id))) this.running = [];
             this.qs = this.qs.filter(function (i) {
-                return i.id != q.id;
+                return i.id !== q.id;
             });
         },
         changePath: function (index) {

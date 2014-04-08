@@ -9,7 +9,7 @@ function niceTime (value) {
     if (minutes > 0)  displayText += minutes + 'm, ';
     if (seconds >= 0) displayText += seconds + 's';
     return displayText;
-};
+}
 
 module.exports = {
     niceTime: niceTime

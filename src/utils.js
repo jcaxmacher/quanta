@@ -17,7 +17,7 @@ var UUID = (function() {
       lut[d1&0xff]+lut[d1>>8&0xff]+'-'+lut[d1>>16&0x0f|0x40]+lut[d1>>24&0xff]+'-'+
       lut[d2&0x3f|0x80]+lut[d2>>8&0xff]+'-'+lut[d2>>16&0xff]+lut[d2>>24&0xff]+
       lut[d3&0xff]+lut[d3>>8&0xff]+lut[d3>>16&0xff]+lut[d3>>24&0xff];
-  }
+  };
   return self;
 })();
 
@@ -70,7 +70,7 @@ function walkPath(opts) {
             items.length &&
             items.length > 0) {
             items = items[0];
-            if (pathAction) pathAction(items)
+            if (pathAction) pathAction(items);
         }
     });
     
@@ -86,7 +86,7 @@ function lastOfType(logs, type) {
     var i = logs.length;
     if (!i) return null;
     while (i--) {
-        if (logs[i].type == type) return logs[i];
+        if (logs[i].type === type) return logs[i];
     }
     return null;
 }
@@ -97,11 +97,11 @@ function lastOfType(logs, type) {
  */
 function arrayEquals(a, b) {
     if (!a || !b
-        || a.length == undefined
-        || b.length == undefined
-        || a.length != b.length) return false;
+        || a.length === undefined
+        || b.length === undefined
+        || a.length !== b.length) return false;
     for (var i = 0; i < a.length; i++) {
-        if (a[i] != b[i]) return false;
+        if (a[i] !== b[i]) return false;
     }
     return true;
 }
@@ -114,8 +114,8 @@ function arrayEquals(a, b) {
  */
 function beginsWith(child, parent, hard) {
     if (!child || !parent
-        || child.length == undefined
-        || parent.length == undefined)
+        || child.length === undefined
+        || parent.length === undefined)
         return false;
 
     if (child.length <= parent.length && hard)
@@ -125,7 +125,7 @@ function beginsWith(child, parent, hard) {
         return false;
 
     for (var i = 0; i < parent.length; i++) {
-        if (child[i] != parent[i]) return false;
+        if (child[i] !== parent[i]) return false;
     }
     return true;
 }
