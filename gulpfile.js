@@ -4,9 +4,7 @@ var gulp      = require('gulp'),
 
 gulp.task('default', ['lint'], function () {
     return gulp.src('component.json')
-        .pipe(component({
-            standalone: true
-        }))
+        .pipe(component())
         .pipe(gulp.dest('build'))
 })
 
