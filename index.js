@@ -85,9 +85,7 @@ var TimerComponent = Vue.extend({
             this.parent;
             this.$root.qs;
             console.log('recomputing children for ' + this.name);
-            var searchPath = this.parent
-                                 .slice(0, this.parent.length)
-                                 .concat([this.id]);
+            var searchPath = this.parent.slice().concat(this.id);
             console.log(searchPath);
             return this.$root.qs.filter(function (q) {
                 console.log(q.parent);
@@ -223,9 +221,7 @@ var vue = new Vue({
                 startTime: Date.now(),
                 stopTime: null
             });
-            this.running = timer.parent
-                .slice(0, timer.parent.length)
-                .concat([timer.id])
+            this.running = timer.parent.slice().concat(timer.id);
         });
 
         this.$on('stopping', function(timer) {
@@ -253,7 +249,7 @@ var vue = new Vue({
                 q = this.qs[i];
                 last = utils.lastOfType(q.logs, 'interval');
                 if (last && last.stopTime == null) 
-                    return q.parent.slice(0, q.parent.length).concat([q.id]);
+                    return q.parent.slice().concat(q.id);
             }
             return [];
         }
@@ -268,7 +264,7 @@ var vue = new Vue({
     },
     methods: {
         addTimer: function () {
-            var parent = this.path.slice(0, this.path.length).map(function (p) {
+            var parent = this.path.map(function (p) {
                 return p.id;
             });
             this.qs.push({
