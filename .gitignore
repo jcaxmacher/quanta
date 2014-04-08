@@ -2,3 +2,4 @@ components
 build
 *.swp
 app
+node_modules/
