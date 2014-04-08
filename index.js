@@ -274,9 +274,11 @@ var vue = new Vue({
                 type: 'timer'
             });
         },
-        kill: function (i) {
-            this.qs.$remove(i);
-            this.running = [];
+        kill: function (q) {
+            if (arrayEquals(this.running, q.parent.slice().concat(q.id))) this.running = [];
+            this.qs = this.qs.filter(function (i) {
+                return i.id != q.id;
+            });
         },
         changePath: function (index) {
             this.$dispatch('changePath:up',
