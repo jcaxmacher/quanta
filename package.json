@@ -1,0 +1,9 @@
+{
+  "name": "quanta",
+  "version": "0.0.1",
+  "devDependencies": {
+    "gulp-component": "^0.1.5",
+    "gulp-jshint": "^1.5.0",
+    "gulp": "^3.5.2"
+  }
+}
